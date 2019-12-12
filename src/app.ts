@@ -10,8 +10,30 @@ interface Book {
   id: number;
   category: Category;
   pages?: number;
-  markDamaged?(reason: string): void;
+  markDamaged?: DamageLogger;
 }
+
+interface DamageLogger {
+    (reason: string): void;
+}
+
+interface Person {
+    name: string;
+    email: string;
+}
+
+interface Author extends Person {
+    numBooksPublished: number;
+}
+
+interface Librarian extends Person {
+    department: string;
+    assistCustomer(custName: string): void;
+}
+
+type BookProperties = keyof Book;
+type PersonBook  = Book & Person;
+type BookOrUndefined = Book | undefined;
 
 enum Category {
   JAVASCRIPT = 'JavaScript',
@@ -78,24 +100,24 @@ function getBookAuthorByIndex(bookIndex: number): [string, string] {
   return [title, author];
 }
 
-function calcTotalPages(): bigint {
-  const libraries = [
-    { lib: 'libName1', books: 1_000_000_000, avgPagesPerBook: 250 },
-    { lib: 'libName2', books: 5_000_000_000, avgPagesPerBook: 300 },
-    { lib: 'libName3', books: 3_000_000_000, avgPagesPerBook: 280 },
-  ] as const;
-
-  return libraries.reduce((acc, lib) => {
-    const libPages = BigInt(lib.books) * BigInt(lib.avgPagesPerBook);
-
-    return acc + libPages;
-  }, 0n);
-}
+// function calcTotalPages(): bigint {
+//   const libraries = [
+//     { lib: 'libName1', books: 1_000_000_000, avgPagesPerBook: 250 },
+//     { lib: 'libName2', books: 5_000_000_000, avgPagesPerBook: 300 },
+//     { lib: 'libName3', books: 3_000_000_000, avgPagesPerBook: 280 },
+//   ] as const;
+//
+//   return libraries.reduce((acc, lib) => {
+//     const libPages = BigInt(lib.books) * BigInt(lib.avgPagesPerBook);
+//
+//     return acc + libPages;
+//   }, 0n);
+// }
 
 logFirstAvailable(getAllBooks());
 logBookTitles(getBookTitlesByCategory(Category.JAVASCRIPT));
 console.log(getBookAuthorByIndex(3));
-console.log(calcTotalPages());
+// console.log(calcTotalPages());
 
 // Module 2
 log('Module 2', true);
@@ -107,7 +129,7 @@ const displayTitles = (books: readonly Book[]) => {
 };
 displayTitles(getAllBooks());
 
-const getBookByID = (id: number) => {
+const getBookByID = (id: number): BookOrUndefined => {
   const books = getAllBooks();
 
   return books.find(book => book.id === id);
@@ -220,3 +242,143 @@ const myBook: Book = {
 
 printBook(myBook);
 myBook.markDamaged('missing back cover');
+
+// 04.02
+log('Task 04.02');
+
+const logDamage: DamageLogger = reason => console.log(`logging damage: ${reason}`);
+logDamage('45hp');
+
+// 04.03
+log('Task 04.03');
+
+const favoriteAuthor: Author = {
+    email: 'author@gmail.com',
+    name: 'Ben Franklin',
+    numBooksPublished: 37
+};
+
+// const favoriteLibrarian: Librarian = {
+//     name: 'Jerry',
+//     email: 'jerry@library.uk',
+//     department: 'London',
+//     assistCustomer: customerName => console.log(`Assisting customer ${customerName}`),
+// };
+
+// 04.04
+log('Task 04.04');
+
+const offer: any = {
+    book: {
+        title: 'Essential TypeScript',
+    },
+};
+console.log(offer?.magazine);
+
+// 04.05
+log('Task 04.05');
+
+const getBookProps = (book: Book, bookProp: BookProperties) => {
+    const prop = book[bookProp];
+
+    return typeof prop === 'function' ? prop.name : prop;
+};
+
+console.log(getBookProps(getAllBooks()[1], 'title'));
+console.log(getBookProps(getAllBooks()[1], 'markDamaged'));
+// console.log(getBookProps(getAllBooks()[1], 'isbn'));
+
+
+// Module 4
+log('Module 4', true);
+// 05.01
+log('Task 05.01');
+
+abstract class ReferenceItem {
+    // title: string;
+    // year: number;
+    //
+    // constructor(newTitle: string, newYear: number) {
+    //     console.log('Creating a new ReferenceItem...');
+    //
+    //     this.title = newTitle;
+    //     this.year = newYear;
+    // }
+    private _publisher: string;
+    static department = 'Initial department';
+    constructor(public title: string, protected year: number) {}
+
+    get publisher(): string {
+        return this._publisher.toUpperCase();
+    }
+
+    set publisher(newPublisher: string) {
+        this._publisher = newPublisher;
+    }
+
+    printItem() {
+        console.log(`${this.title} was published in ${this.year} at ${ReferenceItem.department}`);
+    }
+
+    abstract printCitation(): void;
+}
+// const ref = new ReferenceItem('Some TITLE', 1977);
+// ref.printItem();
+// ref.publisher = 'Hollahold';
+// console.log(ref.publisher);
+
+// 05.02
+log('Task 05.02');
+
+class Encyclopedia extends ReferenceItem {
+    constructor(title, year, public edition) {
+        super(title, year);
+    }
+
+    printItem() {
+        super.printItem();
+
+        console.log(`Edition: ${this.edition} (${this.year})`);
+    }
+
+    printCitation(): void {
+        console.log(`${this.title} - ${this.year}`);
+    }
+}
+const refBook = new Encyclopedia('Big Medical Encyclopedia', 1963, 'PJSC Prosvita');
+refBook.printItem();
+
+// 05.03
+log('Task 05.03');
+
+refBook.printCitation();
+
+// 05.04
+log('Task 05.04');
+
+class UniversityLibrarian implements Librarian {
+    name: string;
+    email: string;
+    department: string;
+    assistCustomer(custName: string): void {
+        console.log(`${this.name} is assisting ${custName}`);
+    }
+}
+
+const favoriteLibrarian: Librarian = new UniversityLibrarian();
+favoriteLibrarian.name = 'Librarian name';
+favoriteLibrarian.assistCustomer('Customer Bobby');
+
+// 05.05
+log('Task 05.05');
+
+const personBook: PersonBook = {
+    name: 'John',
+    email: 'john_galt@gmail.com',
+    id: 1,
+    title: 'Who is John Galt?',
+    author: 'John Galt',
+    category: Category.HTML,
+    available: true,
+};
+console.log(personBook);
